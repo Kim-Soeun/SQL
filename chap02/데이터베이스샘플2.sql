@@ -203,7 +203,40 @@ select 이름, 학번, 생년월일 from 대학생 where (입학년도 between 2
 
 select 학번, 수학, 영어 from 시험 order by 수학 desc, 영어  limit 10; 
 
+-- 대학생 테이블에서 입학년도가 2016년이 아니면서 성별이 남자인 학생의
+-- 인원수를 검색하되, 별명은 남학생 인원수로 설정하시오
+select count(*) as '남학생 인원수' from 대학생 where not (입학년도='2016') and 성별='M';
+select count(*) as '남학생 인원수' from 대학생 where 입학년도!='2016' and 성별='M'; -- 위와 같음
+
+-- 대학생 테이블에서 학과코드별로 인원수를 검색하세요
+select 학과코드,count(*) as '학과코드 인원수' from 대학생 GROUP BY 학과코드;
+
+-- 대학생 테이블에서 입학년도가 2015년 학생들의 학과코드별 인원수를 검색하세요
+select 학과코드,count(*) as '2015년 인원수' from 대학생 where 입학년도='2015' GROUP BY 학과코드;
+
+-- 대학생 테이블에서 입학년도가 2015년인 학생들 중
+-- 학과코드별로 2명 이상의 인원수인 데이터에 대해서만
+-- 학과코드별 인원수를 검색하세요
+select 학과코드,count(*) as '2015년 인원수' from 대학생 where 입학년도='2015' GROUP BY 학과코드 HAVING count(*)>=2;
 
 
+-- 교수 테이블에서 마씨 성을 가진 교수의
+-- 학과코드, 학과담당교수를 검색하세요ALTER
+select 학과코드,학과담당교수 from 교수 where 학과담당교수 like '마%';
 
+-- 대학생 테이블에서 이름이 '제'로 시작하는
+-- 학생들의 이름, 학번, 생년월일을 검색하되
+-- 성별이 여자인 학생들만 검색하세요
+select 이름,학번,생년월일 from 대학생 where 이름 like '제%' and 성별='F';
 
+-- 성별이 여자이거나 국어점수가 90점 이상인 학생의 학번을 검색하세요
+select 학번 from 대학생 where 성별='F' UNION select 학번 from 시험 where 국어>=90;
+
+-- 수학점수가 96점 이상인 학생의 이름을 검색하세요
+select 이름 from 대학생 where 학번 in(select 학번 from 시험 where 수학>=96); 
+
+-- 성별이 여자이면서 국어점수가 90점 이상인 학생의 학번을 검색하세요
+select 학번 from 대학생 where 성별='F' and 학번 in(select 학번 from 시험 where 국어>=90);
+
+-- 학과명이 국문학과나 영문학과인 학생의 이름을 검색하세요
+select 이름 from 대학생 where 학과코드 in(select 학과코드 from 교수 where 학과명='영문학과' or 학과명='국문학과');
