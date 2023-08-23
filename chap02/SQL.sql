@@ -192,3 +192,118 @@ select 학번 from 학생 where 성별='여' UNION select 학번 from 수강 whe
 -- 과목번호가 c002인 과목을 수강한 학생의 이름을 검색
 select 이름 from 학생 where 학번 in('s001', 's003', 's004');
 select 이름 from 학생 where 학번 in (select 학번 from 수강 where 과목번호='c002');
+
+-- '정보보호' 과목을 수강한 학생의 이름을 검색 (중첩 부 질의문)
+-- = : 결과가 하나일 때 사용
+select 이름 from 학생 where 학번 in (
+select 학번 from 수강 where 과목번호 = 
+(select 과목번호 from 과목 where 이름='정보보호'));
+
+-- '정보보호' 과목을 수강한 학생의 이름을 검색 (중첩 부 질의문)
+-- in : 결과가 여러개일 때 사용
+select 이름 from 학생 where 학번 in (
+select 학번 from 수강 where 과목번호 in
+(select 과목번호 from 과목 where 이름='정보보호'));
+
+-- 과목번호가 'c002'인 과목을 수강한 학생의 이름을 검색(EXISTS 연산자)
+select 이름 from 학생 where EXISTS (select * from 수강 where 수강.학번 and 과목번호='c002');
+
+-- 학생 중에서 한 과목도 수강하지 않은 학생의 이름을 검색
+select 이름 from 학생 where not EXISTS ( select * from 수강 where 수강.학번 = 학생.학번); 
+
+select * from 학생;  -- 7개
+select * from 수강;  -- 9개
+
+-- 학생,수강 테이블 데이터 모두 가져옴
+select * from 학생,수강; -- 63개
+
+-- 전체 학생의 기본 정보와 모든 수강 정보를 검색(조인 검색)
+select * from 학생, 수강 where 학생.학번=수강.학번;
+select 이름 from 학생, 수강 where 학생.학번=수강.학번;
+select DISTINCT 이름 from 학생, 수강 where 학생.학번=수강.학번;
+select * from 학생 join 수강 on 학생.학번=수강.학번;
+
+-- 학생 중에서 과목번호가 'c002'인 과목을 수강한 학생의 학번과 이름, 과목번호 
+-- 그리고 변환중간성적(학생별 중간 성적의 10% 가산점수)을 검색
+select 학생.학번,이름,과목번호,중간성적*1.1 as 변환중간성적 from 학생, 수강 where 학생.학번=수강.학번 and 과목번호='c002';
+select 학생.학번,이름,과목번호,중간성적*1.1 as 변환중간성적 from 학생 join 수강 on 학생.학번=수강.학번 where 과목번호='c002';
+
+-- 학생 중에서 '정보보호' 과목을 수강한 학생의 학번과 이름, 과목번호를 검색
+select 학생.학번,학생.이름,수강.과목번호 from (학생 join 수강 on 학생.학번=수강.학번)
+join 과목 on 수강.과목번호=과목.과목번호 where 과목.이름='정보보호';
+
+-- 학생 중에서 과목번호가 'c002'인 과목을 수강한 학생의 이름, 과목번호를 검색(테이블 별칭 사용)
+select 이름,과목번호 from 학생 as S, 수강 as E
+where S.학번=E.학번 and 과목번호='c002';
+
+-- 주소가 같은 학생들의 이름을 쌍으로 검색
+-- 검색되는 첫 번째 학생이 두 번째 학생보다 학년이 높도록 설정(셀프 조인)
+ select S1.이름,S2.이름 from 학생 S1 JOIN 학생 S2 ON S1.주소=S2.주소 
+ WHERE S1.학년>S2.학년;
+ 
+ -- 과목을 수강하지 않은 학생을 포함하여 모든 학생의 학번, 이름과 
+ -- 학생이 수강한 교과의 평가학점을 검색(외부 조인)
+ -- left outer join : 조인 연산자 왼쪽 테이블의 모든 행들이 빠짐없이 조인 최종 결과에 포함
+ select 학생.학번,이름,평가학점 from 학생 left outer join 수강 on 학생.학번=수강.학번;
+ 
+ -- 학생테이블의 모든 데이터를 가져와 새로운 학생1 테이블 생성
+ create table 학생1 as(select * from 학생);
+ create table 수강1 as(select * from 수강);
+ create table 과목1 as(select * from 과목);
+ desc 학생1;
+
+-- 괄호 안 요소들과 데이터의 순서가 맞아야 함
+insert into 학생1(학번,이름,주소,학년,나이,성별,휴대폰번호,소속학과)
+values('g001','김연아2','서울 서초',4,23,'여','010-111-2222','컴퓨터');
+
+-- 괄호안 순서가 바껴도 데이터 순서와만 맞으면 됨
+insert into 학생1(이름,학번,주소,학년,나이,성별,휴대폰번호,소속학과)
+values('홍길동2','DEFAULT','서울 서초',4,23,'여','010-111-2222','컴퓨터');
+
+-- 학번,이름,학년,성별 속성은 not null로 설정했기 때문에 값이 꼭 들어가야 함
+insert into 학생1(학번,이름,학년,성별) values('g002','김연아3',4,'여');
+
+select * from 학생1;
+
+insert into 학생1(이름,학년,나이,성별,소속학과,학번) values('홍길동2',1,26,'남','통계','g002');
+
+insert into 학생1(학년,나이,성별,소속학과,학번,이름)
+values(3,30,'남','정보통신','g003','이승엽2');
+
+select * from 학생1;
+delete from 학생1 where 이름='김연아3';
+delete from 학생1 where 이름='홍길동2';
+
+update 학생1 set 학년=3 where 이름='이은진';
+
+select * from 학생1 where 이름='이은진';
+
+-- 4학년을 1씩 증가시키고 소속학과를 '자유전공학부'로 변경
+update 학생1
+set 학년=학년+1, 소속학과='자유전공학부'
+where 학년=4;
+
+select * from 학생1;
+
+-- 수강 내용이 없는 학생의 소속학과를 널 값으로 수정
+update 학생1 set 소속학과=null where 학번 not in(select 학번 from 수강1);
+select * from 학생1;
+
+-- 학번이 's003'인 학생의 수강 내용을 '이은진' 학생이 수강한 것으로 수정
+-- 즉, 수강1 테이블에서 학번을 's003' 대신에 '이은진' 학생의 학번으로 변경
+update 수강1 set 학번 =(select 학번 from 학생1 where 이름='이은진') where 학번='s003';
+select * from 수강1 where 학번='s003' or 학번='s007'; 
+
+-- 송윤아 학생의 모든 정보 삭제
+delete from 학생1 where 이름='송윤아';
+select * from 학생1;
+
+-- 3학년 모든 학생 정보 삭제
+delete from 학생1 where 학년=3;
+select * from 학생1;
+
+-- 수강자가 2명 미만인 과목에 대한 과목 정보를 모두 삭제
+delete from 과목1 where 과목번호 in(select 과목번호 from 수강1 group by 과목번호 having count(*)<2);
+select * from 과목1;
+
+create database chap5;

@@ -240,3 +240,67 @@ select 학번 from 대학생 where 성별='F' and 학번 in(select 학번 from �
 
 -- 학과명이 국문학과나 영문학과인 학생의 이름을 검색하세요
 select 이름 from 대학생 where 학과코드 in(select 학과코드 from 교수 where 학과명='영문학과' or 학과명='국문학과');
+
+-- 대학생과 시험 테이블을 사용하시오
+-- 시험을 응시한 학생의 이름을 검색하세요
+select 이름 from 대학생 join 시험 on 대학생.학번=시험.학번;
+
+-- 대학생과 시험 테이블을 사용하시오
+-- 시험을 응시한 학생의 이름을 검색하되 국어점수가 80점 이상만 검색하세요
+select 이름 from 대학생 join 시험 on 대학생.학번=시험.학번 where 국어>=80;
+
+-- 대학생과 시험 테이블을 사용하시오
+-- 이름, 입학년도, 국어, 수정영어점수(영어점수의 90%로 설정)를 검색하되
+-- 수학이 80점 이상인 학생만 검색하세요
+select 이름,입학년도,국어,영어*0.9 as 수정영어점수 from 대학생 join 시험 on 대학생.학번=시험.학번 where 수학>=80;
+select 이름,입학년도,국어,영어*0.9 as 수정영어점수 from 대학생 join 시험 on 대학생.학번=시험.학번 and 수학>=80;
+
+-- 이름, 수학, 영어, 학과명을 검색하되
+-- 국어점수가 80점 이상인 데이터를 검색하세요
+select 이름, 수학, 영어, 학과명 from (교수 join 대학생 on 교수.학과코드=대학생.학과코드) join 시험 on 대학생.학번=시험.학번 where 국어>=80;
+select 이름, 수학, 영어, 학과명 from (대학생 join 시험 on 대학생.학번=시험.학번) join 교수 on 대학생.학과코드=교수.학과코드 where 국어>=80;
+
+-- 대학생과 시험 테이블을 사용하시오
+-- 시험을 응시하지 않은 학생을 포함하여
+-- 이름, 학번, 국어, 영어 점수를 검색하세요
+select 이름,대학생.학번,국어,영어 from 대학생 left outer join 시험 on 대학생.학번=시험.학번;
+
+-- 시험을 응시하지 않은 학생의 이름을 검색하세요
+select 이름 from 대학생 where 학번 not in (select 학번 from 시험);
+select 이름 from 대학생 left outer join 시험 on 대학생.학번=시험.학번 where 국어 is null;
+
+
+-- 대학생 테이블에서 성별이 남인 남학생만 끌어와 새로운 '남자대학생' 테이블 생성
+create table 남자대학생 as (select * from 대학생 where 성별='M');
+select * from 남자대학생;  -- 38개
+
+-- 우수응시자 테이블을 생성하세요 (시험 테이블 이용)
+-- 국어와 영어가 80점 이상인 학생으로 생성하세요
+create table 우수응시자 as (select * from 시험 where 국어>=80 and 영어>=80);
+
+select * from 우수응시자;
+
+-- 교수 테이블을 복사해서 교수2 테이블을 생성하세요
+create table 교수2 as(select * from 교수);
+
+-- 교수2 테이블에서 물리학과 교수 이름을 아인슈타인으로 변경하세요
+update 교수2 set 학과담당교수='아인슈타인' where 학과명='물리학과';
+select * from 교수2;
+
+-- 대학생, 시험 테이블을 복사하여 대학생2, 시험2 테이블을 생성하세요
+create table 대학생2 as(select * from 대학생);
+create table 시험2 as(select * from 시험);
+
+-- 대학생2 테이블에서 시험에 응시하지 않은 학생의 전화번호를 null로 설정하세요
+update 대학생2 set 전화번호=null where 학번 not in (select 학번 from 시험);
+select * from 대학생2 where 전화번호 is null;
+
+-- 대학생2에서 성별을 '남', '여'로 변경하세요(M은 남, F는 여)
+update 대학생2 set 성별='남' where 성별='M';
+update 대학생2 set 성별='여' where 성별='F';
+select * from 대학생2;
+
+-- 대학생2, 교수2 테이블을 이용하세요
+-- 학과별 인원이 10명 미만인 교수2 테이블 정보를 삭제하세요
+delete from 교수2 where 학과코드 in(select 학과코드 from 대학생2 group by 학과코드 having count(*)<10);
+select * from 교수2; 
