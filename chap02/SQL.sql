@@ -31,6 +31,7 @@ select * from 학생;
 
 create database univDB;
 use univDB;
+-- 작업대상 데이터베이스 변경
 
 CREATE table 학생(
 	학번 char(4) not null,
@@ -60,6 +61,7 @@ create table 수강(
  
  -- 사용자 계정 생성(1234 : 비밀번호)
  CREATE user 'manager' IDENTIFIED by '1234';
+ 
  -- 사용자 계정 권한 부여
  -- *.*: 모든 데이터베이스의 모든 테이블
  -- 모든 데이터베이스의 모든 테이블에 사용자 권한 부여함을 의미
@@ -307,3 +309,109 @@ delete from 과목1 where 과목번호 in(select 과목번호 from 수강1 group
 select * from 과목1;
 
 create database chap5;
+
+create table 과목2(
+	과목번호 char(4) not null primary key,
+    이름 varchar(20) not null,
+    강의실 char(5) not null,
+    개설학과 varchar(20) not null,
+    시수 int not null
+);
+
+
+create table 학생2(
+	학번 char(4) not null,
+    이름 varchar(20) not null,
+    주소 varchar(50) default '미정',
+    학년 int not null,
+    나이 int null,
+	성별 char(1) not null,
+    휴대폰번호 char(13) null,
+    소속학과 varchar(20) null,
+	primary key(학번), 	 -- 기본키(중복 x, 널값 x)
+    unique(휴대폰번호)   	 -- 후보키(중복 x, 널값 o)
+);    
+
+DESC 학생2;
+
+show create table 학생2;
+
+create table 수강2(
+	학번 char(6) not null,
+    과목번호 char(4) not null,
+    신청날짜 date not null,
+    중간성적 int null default 0,
+    기말성적 int null default 0,
+    평가학점 char(1) null,
+    primary key(학번, 과목번호),   					-- 기본키 지정
+    foreign key(학번) references 학생2(학번),  		-- 외래키 '학번' 열이 '학생2' 테이블의 '학번' 열을 참조
+    foreign key(과목번호) references 과목2(과목번호)	-- 외래키 '과목번호'열이 '과목2' 테이블의 기본키 '과목번호' 열을 참조
+);
+
+insert into 과목2 values('c111','database',A-123,'산업공학');     -- 오류(문자에 따옴표 없음)
+insert into 과목2 values('c111','database','A-123','산업공학');   -- 오류(필드 5개인데 4개만 입력)
+insert into 과목2 values('c111','database','A-123','산업공학',3); -- 정상
+
+insert into 학생2(학번,이름,학년,나이,성별,휴대폰번호,소속학과)
+values ('s111','박태환',4,null,'남','010-1111-1111','산업공학');
+
+insert into 학생2(학번,이름,학년,나이,성별,휴대폰번호,소속학과)
+values ('s222','박태환2',2,null,'남','010-1111-1111','산업공학');	  -- 오류 : 휴대폰번호(후보키) 중복 입력 안됨
+
+insert into 학생2(학번,이름,학년,나이,성별,휴대폰번호,소속학과)
+values ('s222','박태환',2,null,'남','010-2222-2222','산업공학');   -- 정상
+
+insert into 수강2(학번,과목번호,신청날짜) values('s111','c111','2019-12-31');
+-- 정상 처리(학생2 학번에 s111 존재하고 과목2 테이블에 c111 존재함)
+
+insert into 수강2(학번,과목번호,신청날짜,중간성적,기말성적,평가학점)
+values('s111','c222','2019-12-31',93,98,'A');
+-- 외래키 오류 (과목2 테이블에 과목번호 C222가 존재하지 않음)
+
+insert into 수강2(학번,과목번호,신청날짜,중간성적,기말성적,평가학점)
+values ('s111','c111','2019-12-31',93,98,'A');
+-- 기본키 오류 (학번, 과목번호가 중복된 값이 존재함)
+-- 
+
+insert into 수강2(학번,과목번호,신청날짜,중간성적,기말성적,평가학점)
+values ('s222','c111','2019-12-31',93,98,'A');
+-- 정상
+
+-- 학생2( 박태환 데이터 2개), 과목2(1개), 수강2(2개)
+
+select * from 학생2;
+
+-- create table 과목3 as (select * from 과목2);
+-- 과목2 테이블 복사해서 과목3 테이블을 생성
+
+insert into 과목2 select * from 과목;
+ -- 과목에 있는 데이터를 과목2 테이블에 복사함
+insert into 학생2 select * from 학생;
+insert into 수강2 select * from 수강;
+ 
+ -- 학생2 테이블에 새로운 등록날짜 열을 추가
+ alter table 학생2 add 등록날짜 datetime not null default '2019-12-30';
+ 
+ -- 학생2 테이블에 등록날짜 삭제
+ alter table 학생2 drop column 등록날짜;
+ 
+ -- 열 이름 변경( 학생2 테이블에서 '이름'을 '학생이름'으로 변경)
+ -- alter table 테이블이름 change 기존이름 신규이름 데이터타입;
+ alter table 학생2 change 이름 학생이름 varchar(20);
+ 
+ select * from 학생2;
+
+-- 테이블 이름 변경(테이블 '학생2'를 '재학생2'로 변경)
+-- alter table 테이블이름 rename to 신규이름;  
+alter table 학생2 rename to 재학생2;
+select * from 재학생2;
+
+-- 과목2, 수강2, 재학생2
+-- 수강2 테이블은 과목2 테이블과 재학생2 테이블을 외래키로 참조하고 있음
+-- 삭제할 때는 참조하고 있는 테이블을 먼저 삭제
+drop table 과목2;    -- 오류 : 수강2 테이블이 과목2 테이블을 참조하고 있으므로 삭제 안됨
+drop table 수강2;    -- 참조 테이블(자식 테이블) 먼저 삭제
+drop table 과목2;    -- 그 후 부모 테이블 삭제
+
+select * from 과목2;  -- 오류 : 삭제되었기 때문에 결과 없음
+
