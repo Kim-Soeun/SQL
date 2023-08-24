@@ -2,14 +2,14 @@ create database test;
 use test;
 
 create table 학생(
-	학번 varchar(10),
+    학번 varchar(10),
     이름 varchar(20),
     학년 int,
     성별 varchar(2)
  );   
  
  create table 직원(
-	사번 varchar(10),
+    사번 varchar(10),
     이름 varchar(20),
     나이 int,
     성별 varchar(2)
@@ -34,7 +34,7 @@ use univDB;
 -- 작업대상 데이터베이스 변경
 
 CREATE table 학생(
-	학번 char(4) not null,
+    학번 char(4) not null,
     이름 varchar(20) not null,
     주소 varchar(50) null default "미정",
     학년 int not null,
@@ -311,7 +311,7 @@ select * from 과목1;
 create database chap5;
 
 create table 과목2(
-	과목번호 char(4) not null primary key,
+    과목번호 char(4) not null primary key,
     이름 varchar(20) not null,
     강의실 char(5) not null,
     개설학과 varchar(20) not null,
@@ -320,15 +320,15 @@ create table 과목2(
 
 
 create table 학생2(
-	학번 char(4) not null,
+    학번 char(4) not null,
     이름 varchar(20) not null,
     주소 varchar(50) default '미정',
     학년 int not null,
     나이 int null,
-	성별 char(1) not null,
+    성별 char(1) not null,
     휴대폰번호 char(13) null,
     소속학과 varchar(20) null,
-	primary key(학번), 	 -- 기본키(중복 x, 널값 x)
+    primary key(학번), 	 -- 기본키(중복 x, 널값 x)
     unique(휴대폰번호)   	 -- 후보키(중복 x, 널값 o)
 );    
 
@@ -337,7 +337,7 @@ DESC 학생2;
 show create table 학생2;
 
 create table 수강2(
-	학번 char(6) not null,
+    학번 char(6) not null,
     과목번호 char(4) not null,
     신청날짜 date not null,
     중간성적 int null default 0,
@@ -359,7 +359,7 @@ insert into 학생2(학번,이름,학년,나이,성별,휴대폰번호,소속학
 values ('s222','박태환2',2,null,'남','010-1111-1111','산업공학');	  -- 오류 : 휴대폰번호(후보키) 중복 입력 안됨
 
 insert into 학생2(학번,이름,학년,나이,성별,휴대폰번호,소속학과)
-values ('s222','박태환',2,null,'남','010-2222-2222','산업공학');   -- 정상
+values ('s222','박태환',2,null,'남','010-2222-2222','산업공학');  	   -- 정상
 
 insert into 수강2(학번,과목번호,신청날짜) values('s111','c111','2019-12-31');
 -- 정상 처리(학생2 학번에 s111 존재하고 과목2 테이블에 c111 존재함)
@@ -371,7 +371,6 @@ values('s111','c222','2019-12-31',93,98,'A');
 insert into 수강2(학번,과목번호,신청날짜,중간성적,기말성적,평가학점)
 values ('s111','c111','2019-12-31',93,98,'A');
 -- 기본키 오류 (학번, 과목번호가 중복된 값이 존재함)
--- 
 
 insert into 수강2(학번,과목번호,신청날짜,중간성적,기말성적,평가학점)
 values ('s222','c111','2019-12-31',93,98,'A');
