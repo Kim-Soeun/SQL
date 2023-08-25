@@ -304,3 +304,86 @@ select * from 대학생2;
 -- 학과별 인원이 10명 미만인 교수2 테이블 정보를 삭제하세요
 delete from 교수2 where 학과코드 in(select 학과코드 from 대학생2 group by 학과코드 having count(*)<10);
 select * from 교수2; 
+
+
+-- 대학생2 학번(기본키), 학과코드(외래키)
+-- 시험2 학번(외래키)
+-- 교수2 학과코드(기본키) 설정해서 테이블을 생성하세요
+
+-- 테이블 생성 순서 : 교수2, 대학생2, 시험2
+-- 기본키가 생성되어야 외래키를 만들 수 있기 때문에 교수2의 기본키 먼저 설정 후
+-- 대학생2 외래키 설정하고 시험2 설정
+
+-- 삭제 순서 : 시험2, 대학생2, 교수2
+
+create table 대학생2
+(
+	이름 varchar(100) null,     
+	학번 varchar(11) not null,
+	생년월일 varchar(6) null,
+	성별 varchar(1) null,
+	입학년도 varchar(4) null,
+	전화번호 varchar(11) null,
+	학과코드 varchar(3) null,
+    PRIMARY KEY(학번),
+    FOREIGN KEY(학과코드) references 교수2(학과코드)
+);
+
+create table 시험2
+(
+	학번 varchar(11) null,
+	국어 int,
+	영어 int,
+	수학 int,
+    foreign key(학번) REFERENCES 대학생2(학번)
+);
+
+create table 교수2
+(
+	학과코드 varchar(3) not null,
+	학과명 varchar(100) null,
+	학과담당교수 varchar(100) null,
+    primary key(학과코드)
+);
+
+-- 교수 테이블에 있는 데이터들을 교수2에 넣음
+insert into 교수2 select * from 교수;
+insert into 대학생2 select * from 대학생;
+insert into 시험2 select * from 시험;
+
+-- 시험2 테이블에 합계라는 필드를 추가하세요
+-- 합계 필드는 국어 + 영어 + 수학 점수의 합계로 데이터를 삽입하세요
+alter table 시험2 add 합계 int;
+update 시험2 set 합계=국어+영어+수학;
+
+-- 뷰(고득점학생)   v1_고득점학생
+-- 합계가 270점 이상인 학생의
+-- 이름, 학번, 점수(합계를 점수로 이름변환) 검색
+create view v1_고득점학생(이름, 학번, 점수)
+as select 이름, 대학생2.학번, 합계 from 대학생2 join 시험2 on 대학생2.학번=시험2.학번 where 합계>=270;
+-- 학번 앞에 대학생2를 적어주는 이유는 대학생2, 시험2 모두 학번이 있지만
+-- 대학생2의 학번이 기본키이기 때문
+select * from v1_고득점학생;
+show tables;
+
+-- 대학생2와 시험2 테이블을 활용하여 V2_남학생 뷰를 생성하세요
+-- V2_남학생 뷰는 이름, 학번, 학과코드, 점수로 구성하세요
+create view V2_남학생(이름,학번,학과코드,점수) 
+as select 대학생2.이름, 대학생2.학번, 대학생2.학과코드, 시험2.합계 
+from 대학생2 join 시험2 on 대학생2.학번=시험2.학번
+where 대학생2.성별='M';
+
+select * from V2_남학생;
+
+-- V2_남학생 뷰를 활용하여 V3_고득점남학생 뷰를 생성하세요
+-- V3_고득점남학생 이름, 학번, 점수로 구성하되
+-- 현재 점수가 250점 이상인 데이터로 구성하세요
+
+create view V3_고득점남학생(이름,학번,점수)
+as select 이름,학번,점수 from V2_남학생 where 점수>=250;
+-- 'V2_남학생'은 필드가 4개이고 'V3_고득점남학생'은 필드가 3개이기 때문에
+-- *로 적지않고 필드를 모두 적어줘야 함
+-- create view V3_고득점남학생(이름,학번,점수)
+-- as select * from V2_남학생 where 점수>=250;   // 오류
+
+select * from V3_고득점남학생;

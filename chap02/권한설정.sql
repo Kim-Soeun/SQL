@@ -22,3 +22,16 @@ grant all on *.* to 'user4'@'%' with grant option;
 grant select on univdb.학생 to 'user2'@'localhost';
 -- 'univDB' 데이터베이스의 학생 테이블에 접근권한을 user2에게 부여
 -- localhost로 접근 가능
+
+show grants for 'user1'@'127.0.0.1';
+-- user1 사용자의 권한 표시
+
+show grants;
+-- 현재 접속 사용자의 권한 표시
+
+-- 권한을 회수하는 명령문(REVOKE)
+revoke delete on univdb.* from 'user1'@'127.0.0.1';
+
+-- 계정 삭제(DROP USER)
+drop user 'user1'@'127.0.0.1';
+

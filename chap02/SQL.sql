@@ -2,14 +2,14 @@ create database test;
 use test;
 
 create table 학생(
-    학번 varchar(10),
+	학번 varchar(10),
     이름 varchar(20),
     학년 int,
     성별 varchar(2)
  );   
  
  create table 직원(
-    사번 varchar(10),
+	사번 varchar(10),
     이름 varchar(20),
     나이 int,
     성별 varchar(2)
@@ -34,7 +34,7 @@ use univDB;
 -- 작업대상 데이터베이스 변경
 
 CREATE table 학생(
-    학번 char(4) not null,
+	학번 char(4) not null,
     이름 varchar(20) not null,
     주소 varchar(50) null default "미정",
     학년 int not null,
@@ -311,7 +311,7 @@ select * from 과목1;
 create database chap5;
 
 create table 과목2(
-    과목번호 char(4) not null primary key,
+	과목번호 char(4) not null primary key,
     이름 varchar(20) not null,
     강의실 char(5) not null,
     개설학과 varchar(20) not null,
@@ -320,15 +320,15 @@ create table 과목2(
 
 
 create table 학생2(
-    학번 char(4) not null,
+	학번 char(4) not null,
     이름 varchar(20) not null,
     주소 varchar(50) default '미정',
     학년 int not null,
     나이 int null,
-    성별 char(1) not null,
+	성별 char(1) not null,
     휴대폰번호 char(13) null,
     소속학과 varchar(20) null,
-    primary key(학번), 	 -- 기본키(중복 x, 널값 x)
+	primary key(학번), 	 -- 기본키(중복 x, 널값 x)
     unique(휴대폰번호)   	 -- 후보키(중복 x, 널값 o)
 );    
 
@@ -337,7 +337,7 @@ DESC 학생2;
 show create table 학생2;
 
 create table 수강2(
-    학번 char(6) not null,
+	학번 char(6) not null,
     과목번호 char(4) not null,
     신청날짜 date not null,
     중간성적 int null default 0,
@@ -359,7 +359,7 @@ insert into 학생2(학번,이름,학년,나이,성별,휴대폰번호,소속학
 values ('s222','박태환2',2,null,'남','010-1111-1111','산업공학');	  -- 오류 : 휴대폰번호(후보키) 중복 입력 안됨
 
 insert into 학생2(학번,이름,학년,나이,성별,휴대폰번호,소속학과)
-values ('s222','박태환',2,null,'남','010-2222-2222','산업공학');  	   -- 정상
+values ('s222','박태환',2,null,'남','010-2222-2222','산업공학');   -- 정상
 
 insert into 수강2(학번,과목번호,신청날짜) values('s111','c111','2019-12-31');
 -- 정상 처리(학생2 학번에 s111 존재하고 과목2 테이블에 c111 존재함)
@@ -414,3 +414,46 @@ drop table 과목2;    -- 그 후 부모 테이블 삭제
 
 select * from 과목2;  -- 오류 : 삭제되었기 때문에 결과 없음
 
+create view v1_고학년학생(학생이름, 나이, 성, 학년) 
+as select 이름, 나이, 성별, 학년 from 학생 where 학년>=3 and 학년<=4;
+-- 3학년 혹은 4학년 학생의 학생이름, 나이, 성, 학년으로 구성된 뷰를 'v1_고학년학생'이라는 이름으로 생성
+
+select * from v1_고학년학생;
+
+-- 각 과목별 과목번호, 강의실, 수강 인원수로 구성된 뷰를 '	v2_과목수강현황'이라는 이름으로 생성
+-- 과목별로 강의실이 동일하다고 가정
+create view V2_과목수강현황(과목번호,강의실,수강인원수)
+as select 과목.과목번호,강의실,count(과목.과목번호)
+from 과목 join 수강 on 과목.과목번호=수강.과목번호
+group by 과목.과목번호;
+
+-- 'v1_고학년학생' 뷰를 기반으로 여학생만으로 구성된 뷰를 'V3_고학년여학생' 이름으로 생성하시오
+create view V3_고학년여학생
+as select * from v1_고학년학생 where 성='여';
+
+select * from V3_고학년여학생;
+
+-- 생성된 뷰를 통해 고학년여학생 정보만 검색하시오
+select * from V1_고학년학생 where 성='여';
+
+-- 'V2_과목수강현황' 뷰에서 수강생 인원이 가장 많은 과목과
+-- 가장 적은 과목에 대한 과목번호, 강의실, 수강인원수 정보를 검색하시오
+select * from v2_과목수강현황
+where 수강인원수 = (select max(수강인원수) from v2_과목수강현황) OR
+수강인원수 = ( select min(수강인원수) from v2_과목수강현황);
+
+drop view v1_고학년학생;
+
+select * from v3_고학년여학생;
+-- 'v3_고학년여학생'의 바탕이 되는 'v1_고학년학생'이 삭제됐기 때문에 오류
+
+-- '수강' 테이블의 '학번','과목번호' 열을 대상으로 인덱스 'idx_수강'을 생성하시오
+create index idx_수강 on 수강(학번,과목번호);
+show index from 수강;
+
+-- '과목' 테이블의 이름 열을 대상으로 유일한 값을 갖는 인덱스 'idx_과목'을 생성하시오
+create unique index idx_과목 on 과목(이름 asc);
+
+-- 인덱스 'idx_수강'을 삭제하고 '과목' 테이블의 인덱스 'idx_과목'을 삭제하시오
+drop index idx_수강 on 수강;
+alter table 과목 drop index idx_과목;
