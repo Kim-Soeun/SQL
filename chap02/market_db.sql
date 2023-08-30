@@ -62,6 +62,7 @@ select mem_name,height,mem_number from member where height>=165 or mem_number>6;
 select mem_name,height from member where height between 163 and 165;
 
 -- 주소가 경기나 전남이나 경남인 걸그룹의 멤버이름과 주소를 검색 단 in을 이용
+-- in : OR 형식으로 조건을 만족하는 것이 하나라도 있는 경우 출력
 select mem_name, addr from member where  addr in('경기','전남','경남');
 
 -- 멤버이름이 핑크로 끝나는 걸그룹의 모든 정보를 검색
@@ -70,3 +71,111 @@ select * from member where mem_name like '%핑크';
 -- 멤버이름이 에이핑크인 회원의 평균키보다 큰 걸그룹의 멤버이름,평균키를 검색
 -- 서브쿼리 사용
 select mem_name, height from member where height > (select height from member where mem_name='에이핑크');  
+
+
+-- 프로시저 이름 user_pro1
+-- 멤버 이름 입력받아
+-- 이름이 같은 그룹의 모든 정보를 출력합니다
+delimiter $$       -- $$는 //로 대체 가능
+create procedure user_pro1(
+	in userName varchar(10)
+)
+begin
+	select * from member where mem_name=userName;
+end $$			   -- delimiter를 $$로 시작했으면 끝도 $$ 써야함
+delimiter ;
+
+call user_pro1('블랙핑크');
+
+-- 프로시저 이름 user_pro2
+-- 멤버 인원수와 멤버 키를 입력받아
+-- 입력받은 숫자보다 큰 멤버의 모든 정보를 출력합니다
+
+drop procedure if exists user_pro2;
+delimiter //
+create procedure user_pro2(
+	in user_number int,
+    in user_height int
+)
+begin
+	select * from member where mem_number>user_number and height>user_height;
+end //
+delimiter ;
+
+call user_pro2(4,160);
+
+
+ create table if not exists member2(
+	id int AUTO_INCREMENT primary key,			-- 자동으로 증가하는 순번
+    txt char(10)
+ );
+
+drop procedure if exists user_pro3;
+delimiter //
+create procedure user_pro3(
+	in txtValue char(10),
+    out outValue int
+)
+begin
+	insert into member2 values(null,txtValue);
+    select max(id) into outValue from member2;
+end //
+
+delimiter ;
+
+call user_pro3('핑클',@myValue);      		   -- @myValue는 변수
+call user_pro3('원더걸스',@yourValue);
+select @myValue as '순번 출력';
+select @yourValue as '순번 출력';
+
+select * from member2;
+
+-- 데뷔 연도가 2015년 이전(2015년 포함 x)이면 "프로 가수"
+-- 데뷔 연도가 2015년 이후(2015년 포함)이면 "신인 가수"를 출력하는
+-- 프로시저 생성하세요           프로시저 이름 : user_pro4
+-- 사용자가 걸그룹 이름을 입력하면 결과를 출력
+
+
+drop procedure if exists user_pro4;
+delimiter $$
+create procedure user_pro4(
+	in userName char(10),
+    out userResult char(20)
+)
+begin
+	declare debutYear int;
+    select year(debut_date) into debutYear from member
+    where mem_name = userName;
+    if(debutYear >= 2015) then
+		set userResult='신인 가수';
+	else 
+		set userResult='프로 가수';
+	end if;
+end $$
+delimiter ;
+
+call user_pro4('오마이걸',@result);
+select @result as 결과;
+
+
+-- 1부터 100까지 합계
+
+drop procedure if exists user_pro5;
+delimiter //
+create procedure user_pro5()
+begin
+	declare sum int;
+	declare num int;
+    set sum=0;
+    set num=1;
+    
+    while( num<=100 ) do
+		set sum = sum + num;
+        set num = num+1;
+	end while;
+    select sum as '합계결과';
+end //
+delimiter ;
+
+call user_pro5();
+

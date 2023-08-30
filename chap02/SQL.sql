@@ -457,3 +457,190 @@ create unique index idx_과목 on 과목(이름 asc);
 -- 인덱스 'idx_수강'을 삭제하고 '과목' 테이블의 인덱스 'idx_과목'을 삭제하시오
 drop index idx_수강 on 수강;
 alter table 과목 drop index idx_과목;
+
+-- 숫자 함수
+select 학번, sum(기말성적)/count(*) as 기말평균, 
+round(sum(기말성적)/count(*),2) as 기말평균2
+-- 기말평균 반올림하여 소수점 2자리까지 표시
+from 수강 group by 학번;
+
+-- 문자함수
+select 소속학과, length(소속학과), right(학번,2), 
+repeat('*',나이), concat(소속학과,'학과') from 학생;
+
+select substring(주소,1,2), replace(substring(휴대폰번호,5,9),'-',',') 
+from 학생;
+-- substring 함수는 "주소" 열에서 첫 번째 문자부터 두 번째 문자까지의 부분 문자열을 추출
+-- replace "휴대폰번호" 열에서 다섯 번째 문자부터 아홉 번째 문자까지의 부분 문자열을 추출한 뒤
+-- 그 부분 문자열 내의 '-' 문자를 ',' 문자로 치환
+
+select 신청날짜,last_day(신청날짜) from 수강 where year(신청날짜)='2019';
+-- last_day(신청날짜): "신청날짜"의 해당 월의 마지막 날짜를 계산하여 출력
+
+select sysdate(), datediff(신청날짜,'2019-01-01') from 수강;
+-- datediff: "신청날짜" 열의 값과 '2019-01-01' 사이의 날짜 차이를 계산하여 출력 
+-- 이 함수는 몇 일이 지났는지를 반환
+-- SYSDATE() 함수는 데이터베이스 시스템에서 현재 날짜와 시간을 반환하는 함수
+
+select 신청날짜, date_format(신청날짜,'%b/%d/%y') from 수강;
+-- date_format(신청날짜, '%b/%d/%y'): "신청날짜" 열의 값을 원하는 형식으로 포맷팅 
+-- %b는 축약된 월 이름, %d는 일(day), %y는 년도의 뒤 두 자리를 나타냄  
+-- ex)'2021-08-15'라면 'Aug/15/21'로 포맷팅
+
+
+delimiter //
+create procedure InserOrUpdateCourse(
+	in CourseNo varchar(4),
+    in CourseName varchar(20),
+    in CourseRoom char(3),
+    in CourseDept varchar(20),
+    in CourseCredit int)
+begin
+	declare Count int;
+    select count(*) into Count from 과목 where 과목번호=CourseNo;
+    if(Count=0) then 
+		insert into 과목(과목번호, 이름, 강의실, 개설학과, 시수)
+        values(CourseNo, CourseName, CourseRoom, CourseDept, CourseCredit);
+	else 
+		update 과목
+        set 이름=CourseName, 강의실=CourseRoom, 개설학과=CourseDept, 시수=CourseCredit
+        where 과목번호 = CourseNo;
+	end if;
+end // 
+delimiter ;
+
+-- declare Count int;: Count라는 변수를 선언, 이 변수는 존재하는 강좌 레코드의 개수를 저장
+-- select count(*) into count from 과목 where 과목번호=CourseNo;: Count 변수에 존재하는 강좌 레코드의 개수를 가져오는 쿼리를 실행
+-- 해당 강좌 번호가 이미 데이터베이스에 존재하는지 확인
+-- If(Count=0) then ... else ... end if;: Count 변수의 값에 따라 조건문을 실행 
+-- 만약 Count가 0인 경우, 새로운 강좌 정보를 삽입 
+-- 그렇지 않은 경우, 기존 강좌 정보를 업데이트
+-- insert into 과목 ... values(...);: 새로운 강좌 정보를 삽입
+-- update 과목 ... where 과목번호 = CourseNo;: 기존 강좌 정보를 업데이트
+
+select * from 과목;
+
+delimiter // 	
+--  MySQL에서 프로시저를 작성할 때, 기본 구문 구분 기호인 세미콜론(;)을 대신 //로 변경, 이렇게 함으로써 프로시저 정의를 구분
+create procedure SelectAverageOfBestScore( 
+    in Score int,			   
+    out Count int			  
+)
+-- 이름이 "SelectAverageOfBestScore"인 저장 프로시저를 생성 
+-- 이 프로시저는 입력 파라미터 Score와 출력 파라미터 Count를 가짐
+-- 사용자가 입력할 숫자
+-- 계산결과(인원수) 출력할 숫자
+	
+	begin			      
+	declare NoMoreData int default false; 
+	declare MidTerm int; 
+	declare Final int; 	   
+-- 프로시저의 시작, 이 안에서 프로시저의 로직을 작성
+-- 반복문의 종료 조건을 검사하기 위한 변수 NoMoreData를 선언하고 기본값을 false로 설정
+-- declare continue handler for not found set NoMoreData = true;: 커서가 데이터를 더 이상 찾지 못할 경우, 해당 핸들러가 호출되어 NoMoreData 변수를 true로 설정
+-- repeat: 반복문을 시작
+    declare Best int;	 -- 중간성적과 기말성적 중 큰 값 저장	 
+    declare ScoreListCursor cursor for 
+		select 중간성적,기말성적 from 수강; -- ScoreListCursor라는 이름의 커서를 선언, "수강" 테이블로부터 중간 성적과 기말 성적을 선택하는 쿼리의 결과를 가리킴
+	declare continue handler for not found set NoMoreData = true;
+		set Count=0;
+	open ScoreListCursor; -- 선언한 커서를 열어 데이터 읽기를 준비
+    	repeat
+	fetch ScoreListCursor into Midterm, Final;
+-- 커서로부터 한 줄의 데이터를 읽어 Midterm과 Final 변수에 할당
+        if Midterm > Final then
+			set Best = Midterm;
+		else
+			set Best = Final;
+		end if;
+-- 중간 성적과 기말 성적 중 더 높은 값을 Best 변수에 할당
+        if(Best>=Score) then
+			set Count = Count+1;
+		end if;
+-- 최고 점수가 입력된 Score보다 높거나 같다면, Count 변수를 1 증가
+	until NoMoreData end repeat;
+-- 데이터를 더 이상 찾을 수 없을 때까지 반복
+    close ScoreListCursor;
+-- 반복이 끝난 후 커서를 닫음
+end // 
+delimiter ;
+
+set @Count = 0; -- 출력 결과를 받아들일 변수명 (생략 가능함)
+call SelectAverageOfBestScore(80, @Count); -- 입력과 출력 파라미터
+select @Count; -- 결과 화면 출력 
+
+
+create table 학생2 as (select * from 학생);
+-- 학생 테이블을 복사해서 학생2 테이블을 생성
+
+create table 남녀학생총수(
+	성별 char(1) not null default 0,
+    인원수 int not null default 0,
+    primary key(성별)
+);
+
+insert into 남녀학생총수 select '남',count(*) from 학생2 where 성별='남';
+insert into 남녀학생총수 select '여',count(*) from 학생2 where 성별='여';
+
+select * from 남녀학생총수;
+
+delimiter //
+	create trigger AfterInsertStu
+    after insert on 학생2 for each row
+begin
+	if(new.성별='남') then
+		update 남녀학생총수 set 인원수 = 인원수 + 1 where 성별='남';
+	elseif(new.성별 = '여') then
+		update 남녀학생총수 set 인원수 = 인원수 + 1 where 성별='여';
+    end if;
+end //
+delimiter ;
+
+insert into 학생2
+values('s008','최동석','경기 수원', 2, 26, '남', '010-8888-6666', '컴퓨터');
+
+select * from 학생2;
+select * from 남녀학생총수;
+
+drop trigger AfterInsertStu; -- AfterInsertStu trigger 삭제 
+
+-- '수강' 테이블에서 학생의 학점이 A이면 '최우수', B이면 '우수', C이면 '보통'
+-- D이나 F이면 '미흡'으로 변환하여 반환하는 사용자 정의 함수를 작성
+delimiter //
+create function Fn_Grade(grade char(1))
+returns varchar(10)
+
+begin 
+	declare ret_grade varchar(10);
+    if(grade='A') then
+		set ret_grade='최우수';
+	elseif(grade='B') then
+		set ret_grade='우수';
+	elseif(grade='C') then
+		set ret_grade='보통';
+	elseif(grade='D' or grade='F') then
+		set ret_grade='미흡';
+	end if;
+    return ret_grade;
+    
+end //
+delimiter ;
+
+select Fn_Grade('A');
+
+select 학번,과목번호,평가학점, Fn_Grade(평가학점) as '평가 등급' from 수강;
+
+
+drop procedure if exists tableInfo;
+delimiter //
+create procedure tableInfo(
+	in tableName varchar(20)
+)
+begin
+	set @sqlQuery = concat('select * from ', tableName);
+    prepare myQuery from @sqlQuery;
+    execute myQuery;
+end //
+delimiter ;
+
+call tableInfo('과목');

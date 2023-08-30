@@ -387,3 +387,214 @@ as select 이름,학번,점수 from V2_남학생 where 점수>=250;
 -- as select * from V2_남학생 where 점수>=250;   // 오류
 
 select * from V3_고득점남학생;
+
+
+-- 시험2 테이블에서 시험날짜를 추가하고 기본 값은 오늘날짜가 들어가게 하세요
+-- 시험2 테이블에서 국어,영어,수학 점수의 평균을 소수점 3자리까지 구하되
+-- 반올림하여 구하시오
+alter table 시험2 add 시험날짜 date default '2023-08-28';
+select * from 시험2;
+
+select 학번, round(sum(국어+영어+수학) / 3,3) as 평균
+from 시험2 group by 학번;
+
+-- 대학생 테이블에서 90년 이후에 태어난 학생의
+-- 이름, 학번, 생년월일을 검색하세요 left 이용
+select 이름, 학번, 생년월일 from 대학생 where left(생년월일,2)>=90;
+
+-- 대학생 테이블에서 90년 이후에 태어난 학생의
+-- 이름, 학번, 평균을 검색하되
+-- 평균은 반올림하여 정수로 표시
+
+ -- select 이름, 대학생.학번, round((시험.국어+시험.영어+시험.수학)/3,0) as 평균 
+ -- from 대학생 join 시험 on 대학생.학번=시험.학번
+ -- where left(생년월일,2)>=90; 문자열의 왼쪽 부분을 지정한 길이만큼 추출하는 데 사용
+ -- sum사용하려면 group by 써야함 
+ 
+select 이름,대학생.학번,round((국어+영어+수학)/3,0) as 평균
+from 대학생 join 시험 on 대학생.학번=시험.학번
+where left(생년월일,2)>=90;
+
+select * from 교수2;
+-- 임용일자 date 타입으로 column 추가
+alter table 교수2 add 임용일자 date; 
+
+update 교수2 set 임용일자='2020-03-01' where 학과담당교수='이세종';
+update 교수2 set 임용일자='2019-05-08' where 학과담당교수='마이클잭슨';
+update 교수2 set 임용일자='2021-06-13' where 학과담당교수='김판사';
+update 교수2 set 임용일자='2008-10-09' where 학과담당교수='나유연';
+update 교수2 set 임용일자='2022-01-03' where 학과담당교수='장영실';
+update 교수2 set 임용일자='2023-02-08' where 학과담당교수='송청결';
+
+-- 교수2 테이블에서 현재까지 근무일수를 구하는데
+-- 이세종 3년 5개월 28일 
+
+select 학과담당교수,floor(datediff(sysdate(),임용일자)/365) as 근무년도, 
+timestampdiff(month, 임용일자, curdate()) - floor(datediff(sysdate(),임용일자)/365)*12 
+as 근무개월
+from 교수2;
+-- curdate()는 현재 날짜를 반환
+-- timestampdiff(unit, start_datetime, end_datetime)
+-- unit: 계산하려는 시간 간격의 단위 YEAR', 'MONTH', 'DAY', 'HOUR', 'MINUTE', 'SECOND'
+-- start_datetime 계산을 시작하는 날짜 및 시간
+-- end_datetime 계산을 끝내는 날짜 및 시간
+-- timestampdiff(MONTH, '2021-01-15', '2023-08-28')는 
+-- '2021-01-15'와 '2023-08-28' 사이의 월 수를 계산하여 결과로 31이 반환
+
+
+-- 교수2 테이블에서 데이터를 추가하는 프로시저 작성
+-- 만약, 학과코드가 이미 존재하면 select 구문을 실행
+-- 프로시저 이름은 InsertProcessor
+
+delimiter //
+create procedure InsertProcessor(
+	in 학과코드2 varchar(10),
+    in 학과명 varchar(100),
+    in 학과담당교수 varchar(100),
+    in 임용일자 date)
+    
+begin
+	declare 개수 int;
+    select count(*) into 개수 from 교수2 where 학과코드=학과코드2;
+    if(개수=0) then 
+		insert into 교수2(학과코드,학과명,학과담당교수,임용일자)
+        values(학과코드2,학과명,학과담당교수,임용일자);
+	else 
+		select * from 교수2;
+	end if;
+end // 
+delimiter ;
+
+-- create procedure InsertProcessor(...) begin ... end // : 저장 프로시저의 정의를 시작
+-- in 학과코드2 varchar(10), ... : 학과코드2 파라미터는 새로 추가된 파라미터로, 저장 프로시저 호출 시 학과 코드 정보를 전달
+-- declare 개수 int;: 개수 변수를 선언, 이 변수는 해당 학과코드2를 가진 교수의 수를 저장
+-- select count(*) into 개수 from 교수2 where 학과코드=학과코드2;: 학과코드2 파라미터와 일치하는 교수의 수를 계산하여 개수 변수에 저장
+-- if(개수=0) then ... else ... end if;: 개수 변수의 값에 따라 조건문을 실행
+-- insert into 교수2 ... values(...);: 학과코드2 파라미터를 사용하여 새로운 교수 정보를 삽입
+-- select * from 교수2;: 이미 존재하는 경우 모든 교수 정보를 출력
+
+call InsertProcessor('107','수학과','김국어','2023-08-01');
+select * from 교수2;
+
+
+-- 시험 테이블(국어,영어,수학)
+-- 3과목의 평균 점수(반올림해서 정수로 처리함)가 사용자가 입력한 점수보다
+-- 큰 점수의 개수를 구하는 프로시저를 생성
+-- CountAverage
+
+delimiter //
+create procedure CountAverage(
+	in InputScore int, -- 사용자가 입력할 점수
+	out Result int 	   -- 결과 점수  
+)
+
+begin
+	declare NoMoreData int default false;
+    declare Average int;
+	declare Kor int; 
+	declare Eng int; 
+	declare Math int; 
+    
+    declare ScoreCursor cursor for
+		select round((국어+영어+수학)/3,0) from 시험;
+    declare continue handler for not found set NoMoreData = true;
+		set Result=0;
+        
+	open ScoreCursor;
+		repeat
+			fetch ScoreCursor into Average;
+			if (Average > InputScore) then
+				set Result = Result+1;
+			end if;
+		until NoMoreData end repeat;
+    close ScoreCursor;
+			
+end //
+delimiter ;
+
+select @Result; -- 결과 화면 출력 
+
+-- 대학생2, 시험2 테이블을 이용하여
+-- 남녀우수학생 테이블을 생성
+-- 남녀우수학생 테이블은 성별로 합계 점수가 200점 이상인 학생들의 인원수
+-- 성별 인원수
+-- 남   16
+-- 요   14
+
+create table 남녀우수학생 (
+	성별 char(1) not null,
+    인원수 int not null default 0,
+    primary key(성별)
+);
+
+insert into 남녀우수학생
+select '남', count(*)from 대학생2 join 시험2 on 대학생2.학번=시험2.학번
+where 성별='M' and 합계>=200;
+insert into 남녀우수학생
+select '여', count(*)from 대학생2 join 시험2 on 대학생2.학번=시험2.학번
+where 성별='F' and 합계>=200;
+select * from 남녀우수학생;
+
+-- 대학생2 테이블에 새로운 데이터를 삽입
+-- 예) 홍길동 17000000 991001 M 2012 01099999999 105
+insert into 대학생2
+values ('홍길동','17000000','991001','M','2012','01099999999','105');
+
+-- 시험2 테이블에 성별 필드를 생성, 대학생 2 테이블의 데이터 가져옴 alter, update
+alter table 시험2 add 성별 char(1);
+update 시험2 set 성별 = (select 성별 from 대학생2 where 대학생2.학번=시험2.학번);
+select * from 시험2;
+
+-- 시험2 테이블에 새로운 데이터를 삽입할 때
+-- 예) 17000000 70 80 90 240 2023-08-28 11:22:30 M
+-- 남녀우수학생 테이블 데이터를 갱신하는 트리거를 생성
+-- 트리거 이름 GreatStudent
+
+delimiter //
+create trigger GreatStudent
+after insert on 시험2 for each row
+begin
+	if(new.합계>=200 and new.성별='M') then
+		update 남녀우수학생 set 인원수 = 인원수 + 1 where 성별='남';
+	elseif (new.합계>=200 and new.성별='F') then
+		update 남녀우수학생 set 인원수 = 인원수 + 1 where 성별='여';
+	end if;
+end // 
+delimiter ;
+
+insert into 시험2 values('17000000','70','80','90','240','2023-08-28','M');
+select * from 남녀우수학생;
+
+
+-- 시험 테이블에서 국어, 영어, 수학 점수의 평균으로
+-- 등급을 구하는 사용자 정의 함수를 구하세요
+-- 평균은 반올림하여 정수로 구하고
+-- 사용자 정의 함수 이름은 Fn_Result로 하세요
+-- 사용자 정의 함수를 이용하여 학번, 평균, 등급을 출력하세요
+-- 등급은 90점 이상 '수', 80점 이상 '우', 70점 이상 '미',
+-- 60점 이상 '양' 나머지는 '가'로 표시하시오
+
+delimiter //
+create FUNCTION Fn_Result(korean int, english int, math int)
+returns varchar(10)
+begin
+	declare ret_average int;
+    declare ret_result varchar(10);
+    set ret_average = round((korean+english+math)/3,0);
+    
+    if(ret_average>=90) then
+		set ret_result='수';
+	elseif(ret_average>=80) then
+		set ret_result='우';
+	elseif(ret_average>=70) then
+		set ret_result='미';
+	elseif(ret_average>=60) then
+		set ret_result='양';
+	else
+		set ret_result='가';
+	end if;
+    return ret_result;
+end //
+delimiter ;
+	
+select 학번, round((국어+영어+수학)/3,0) as '평균', Fn_Result(국어,영어,수학) as '등급' from 시험;
