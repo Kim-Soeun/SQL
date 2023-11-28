@@ -99,7 +99,11 @@ create table crewRecruit(
 select * from crewRecruit;
 select * from crewRecruit where crewName = "크루1";
 insert into crewRecruit values('크루1', '같이뛰어요', '#매일달리기', '전대운동장' , 7, '2023.11.25', '2023.11.30', 'java');
+select *, (select count(memId) from crew where crewName = crewRecruit.crewName) 
+as totalCount from crewRecruit;
 
+select crewRecruit.*, (select count(memId) from crew where crewName = crewRecruit.crewName) totalCount 
+from crewRecruit join crew on crew.crewName = crewRecruit.crewName where crew.memId = 'oo';
 
 create table crew(
 	crewName varchar(30) not null,
@@ -114,9 +118,16 @@ insert into crew values('크루1', 7, 'java', true);
 insert into crew values('크루1', 7, 'aa', false);
 
 select * from crew;
+select* from crewRecruit;
 
 
 delete from crewRecruit where crewName = '크루5' and (select count(*) from crew where crewName = '크루5') <= 1;
 delete from crewRecruit where crewName = '크루7';
 select count(*) from crew where crewName = '크루1';
-update crewRecruit set created = '2023-10-27' where crewName = '크루7';
+update crewRecruit set gatherDate = '2023-10-28' where crewName = '크루9';
+
+delete from crewRecruit where crewName = ? and (select count(*) from crew where crewName = ?) <= 1; 
+select *, (select count(memId) from crew where crewName = crewRecruit.crewName) as totalCount from crewRecruit join crew on crew.crewName = crewRecruit.crewName where crew.memId = 'ww';
+
+select crewRecruit.*, (select count(memId) from crew where crewName = crewRecruit.crewName) totalCount 
+from crewRecruit join crew on crew.crewName = crewRecruit.crewName where crew.memId = 'oo';
