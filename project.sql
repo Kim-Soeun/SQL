@@ -14,21 +14,9 @@ create table member (
     location varchar(20),
     total varchar(20)
 );
-alter table member add column profileImg varchar(400);
 
-select * from member;
-select * from crewboard;
-SELECT imgName, no FROM crewboard ORDER BY created DESC;
 
-select * from member where id = 'java';
-delete from member where id ='1' and password = '#1dfagrehh';
-select id from member where name='가나' and email='aaa@null' and birthDate='951112';
-select password from member where id='aa' and name='가나' and email='aaa@null' and birthDate='951112';
-update member set lastVisitDate = '2023-11-03 11:11' where id = 'aa';
-insert into member values ('aa', '12','홍길동', '1995-11-14', 'aa@naver.com', '홍길동', '010-111-1111' , null, null, null);
-update member set profileImg = 'zzanggu.jpg' where id = 'aa'; 
-update member set password='1', name='고릴라', birthDate='851112', email='bbb@naver.com', nickname='고릴라', phone='010-1111-2222', location='문흥동', profileImg='dog.png' where id = 'aa';
-
+-- 크루 게시판
 create table crewboard(
 	no int primary key auto_increment,
     id varchar(30) not null,
@@ -37,18 +25,15 @@ create table crewboard(
     content text not null,
     category varchar(20) not null,
     imgName varchar(450) not null,
+    crewName varchar(100) not null,
     foreign key(id) references member(id) on delete cascade
 );
 
-ALTER TABLE crewboard MODIFY imgName VARCHAR(450) NULL;
-delete from crewboard where no = 4; 
-update crewboard set created = '2023.11.23', content = '내용입니다', category = 'board', imgName = 'dog.png'
-where no = 7;
 select * from crewboard;
-select *, (select count(*) from recommend where no=crewboard.no) as count from crewboard;
-select * from crewboard where category = '자유게시판';
-insert into crewboard values(0, 'java', 'java', '2023.11.21', '내용1', '자유게시판', 'dog.png');
+alter table crewboard add column crewName varchar(100) not null;
 
+
+-- 게시판 추천
 create table recommend(
 	no int not null,
     id varchar(30) not null,
@@ -76,58 +61,90 @@ create table photobook(
 	foreign key(id) references member(id)
 );
 
-select * from photobook;
-insert into photobook values (0, 'java', '제목1', '내용1', '2023.11.22', 'dog.png');
-delete from photobook where p_no = '2';
-
-SELECT imgName, no FROM crewboard ORDER BY created DESC;
-update crewboard set imgName = null where no = '11';
 
 
+-- 단기크루 등록 & 일정 등록 / 장기크루 일정 no pk auto_increment crewname pk삭제 iscrew(단기크루인지 장기크루 일정인지) boolean추가
 create table crewRecruit(
-	crewName varchar(30) primary key,
+	no int primary key auto_increment,
+	crewName varchar(30) not null,
     title varchar(30) not null,
     content varchar(400) not null,
     location varchar(30) not null,
     memberNum int not null,
     created varchar(20) not null,
     gatherDate varchar(20) not null,
-    adminId varchar(30) not null
+    adminId varchar(30) not null,
+    isCrew boolean default true		-- 단기크루 생성인지, 장기크루 일정인지 확인
 );
-
-
 select * from crewRecruit;
-select * from crewRecruit where crewName = "크루1";
-insert into crewRecruit values('크루1', '같이뛰어요', '#매일달리기', '전대운동장' , 7, '2023.11.25', '2023.11.30', 'java');
-select *, (select count(memId) from crew where crewName = crewRecruit.crewName) 
-as totalCount from crewRecruit;
+insert into crewRecruit values(6,'크루5','제목1','내용1','장소1',5,'2023-11-29','2023-10-01','java',true);
+select crewRecruit.no from crewRecruit join longCrewSchedule on crewRecruit.no = longCrewSchedule.no where memId = 'java' and longCrewSchedule.crewName = '크루1';
+select *, (select count(memId) from longCrewSchedule where crewName = crewRecruit.crewName) as totalCount from crewRecruit order by created desc;
+select crewRecruit.*, (select count(memId) from crew where crewName = crewRecruit.crewName) totalCount from crewRecruit 
+join crew on crew.crewName = crewRecruit.crewName where crew.memId = ? and isCrew = true;
+delete from crewRecruit where crewName = '크루3' and (select count(*) from longCrewSchedule where crewName = '크루3') <= 1 and isCrew = true;
 
-select crewRecruit.*, (select count(memId) from crew where crewName = crewRecruit.crewName) totalCount 
-from crewRecruit join crew on crew.crewName = crewRecruit.crewName where crew.memId = 'oo';
+select crewRecruit.*, (select count(memId) from longCrewSchedule where crewName = crewRecruit.crewName) as totalCount from crewRecruit 
+join longCrewSchedule on longCrewSchedule.crewName = crewRecruit.crewName where longCrewSchedule.memId = 'java';
 
-create table crew(
+-- 장기크루 일정 멤버 등록(단기크루는 그 자체로 일정 fk->no로 바꾸고 pk설정되있는 크루네임 대신에 no)
+create table longCrewSchedule(
+	no int not null,
 	crewName varchar(30) not null,
     memberNum int not null,
     memId varchar(30) not null,
     memAdmin boolean not null,
+    PRIMARY KEY(no, memId),
+    foreign key(memId) references member(id) on delete cascade,
+	foreign key(no) references crewRecruit(no) on delete cascade
+);
+select * from longCrewSchedule;
+select *, (select count(memId) from longCrewSchedule where crewName = crewRecruit.crewName) as totalCount from crewRecruit where crewName = '크루1';
+insert into longCrewSchedule values(4,'크루4',5,'ee',true);
+select crewRecruit.*, (select count(memId) from longCrewSchedule where crewName = crewRecruit.crewName) totalCount from crewRecruit 
+join longCrewSchedule on longCrewSchedule.no = crewRecruit.no where longCrewSchedule.memId = 'java';
+
+-- 게시판 댓글
+create table reply(
+	r_no int primary key auto_increment,
+    b_no int not null,
+    content varchar(70) not null,
+    created varchar(20) not null,
+    id varchar(30) not null,
+    foreign key(b_no) references crewboard(no) on delete cascade
+);
+
+
+-- 장기크루 등록
+create table longCrewRecruit(
+	crewName varchar(30) primary key,
+    content varchar(400) not null,
+    memberNum int not null,
+    created varchar(20) not null,
+    adminId varchar(30) not null
+);
+
+-- 장기크루 크루가입 정보
+create table longCrewMember(
+	crewName varchar(30) not null,
+    memId varchar(30) not null,
+	memberNum int not null,
+    isAdmin boolean not null,
+    joinDate varchar(100),
     PRIMARY KEY(crewName, memId),
     foreign key(memId) references member(id) on delete cascade,
-	foreign key(crewName) references crewRecruit(crewName) on delete cascade
+    FOREIGN KEY (crewName) references longCrewRecruit(crewName) on delete cascade
 );
-insert into crew values('크루1', 7, 'java', true);
-insert into crew values('크루1', 7, 'aa', false);
-
-select * from crew;
-select* from crewRecruit;
 
 
-delete from crewRecruit where crewName = '크루5' and (select count(*) from crew where crewName = '크루5') <= 1;
-delete from crewRecruit where crewName = '크루7';
-select count(*) from crew where crewName = '크루1';
-update crewRecruit set gatherDate = '2023-10-28' where crewName = '크루9';
 
-delete from crewRecruit where crewName = ? and (select count(*) from crew where crewName = ?) <= 1; 
-select *, (select count(memId) from crew where crewName = crewRecruit.crewName) as totalCount from crewRecruit join crew on crew.crewName = crewRecruit.crewName where crew.memId = 'ww';
+-- 가입정보 ( 장기 단기 크루가입, 일정참여 전부에 사용됨)
+create table crewJoin(
+	no int primary key auto_increment,
+	crewName varchar(30) not null,
+    memid varchar(30) not null,
+    adminid varchar(30) not null,
+    ischeck boolean default false
+);
 
-select crewRecruit.*, (select count(memId) from crew where crewName = crewRecruit.crewName) totalCount 
-from crewRecruit join crew on crew.crewName = crewRecruit.crewName where crew.memId = 'oo';
+select * from lognCrewRecruit;
