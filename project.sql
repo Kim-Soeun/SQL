@@ -85,27 +85,25 @@ create table crewRecruit(
     adminId varchar(30) not null,
     isCrew boolean default true		-- 단기크루 생성(true)인지, 장기크루 일정(false)인지 확인
 );
-select * from crewRecruit;
-select *, (select count(memId) from crewSchedule where crewName = crewRecruit.crewName) 
-as totalCount from crewRecruit where isCrew = true order by created desc;
+delete from crewRecruit where crewName = '크루7';
 
-insert into crewRecruit values(8,'크루2','제목8','내용8','장소8',4,'2023-11-30','2023-12-21','java',false);
+select * from crewRecruit;
+select * from longCrewRecruit;
+select crewName from crewRecruit where isCrew = true;
+
+delete from crewRecruit where no = 4 and (select count(*) from crewSchedule where no = 4) <= 1 and isCrew = false;
+
+select crewRecruit.*, (select count(memId) from crewSchedule where crewName = crewRecruit.crewName) as totalCount 
+from crewRecruit where crewRecruit.crewName = '크루8' and isCrew = true;
+
+insert into crewRecruit values(null,'크루8','제목7','내용7','장소7',7,'2023-11-30','2023-10-30','aa',false);
 select crewRecruit.no from crewRecruit join longCrewSchedule on crewRecruit.no = longCrewSchedule.no where memId = 'java' and longCrewSchedule.crewName = '크루1';
 select *, (select count(memId) from longCrewSchedule where crewName = crewRecruit.crewName) as totalCount from crewRecruit order by created desc;
 select crewRecruit.*, (select count(memId) from crew where crewName = crewRecruit.crewName) totalCount from crewRecruit 
 join crew on crew.crewName = crewRecruit.crewName where crew.memId = ? and isCrew = true;
 delete from crewRecruit where crewName = '크루3' and (select count(*) from longCrewSchedule where crewName = '크루3') <= 1 and isCrew = true;
 
-select crewRecruit.*, (select count(memId) from longCrewSchedule where crewName = crewRecruit.crewName) as totalCount 
-from crewRecruit where crewRecruit.crewName = '크루4' and isCrew = true;
-
-select crewRecruit.*, (select count(memId) from crewSchedule where crewName = crewRecruit.crewName) as totalCount 
-from crewRecruit where crewRecruit.crewName = '크루2';
-
-select crewRecruit.*, (select count(memId) from longCrewSchedule where crewName = crewRecruit.crewName) as totalCount from crewRecruit 
-join longCrewSchedule on longCrewSchedule.crewName = crewRecruit.crewName where longCrewSchedule.memId = 'java';
-
--- 크루 일정 멤버 등록(단기크루는 그 자체로 일정 fk->no로 바꾸고 pk설정되있는 크루네임 대신에 no)
+-- 크루 일정 멤버 등록 & 단기크루 멤버(일정멤버) 등록(단기크루는 그 자체로 일정 fk->no로 바꾸고 pk설정되있는 크루네임 대신에 no)
 create table crewSchedule(
 	no int not null,
 	crewName varchar(30) not null,
@@ -117,11 +115,11 @@ create table crewSchedule(
 	foreign key(no) references crewRecruit(no) on delete cascade
 );
 
-insert into crewSchedule values(9,'크루8',5,'ee',false);
+insert into crewSchedule values(16,'크루6',4,'java',true);
 select * from crewSchedule;
 select *, (select count(memId) from longCrewSchedule where crewName = crewRecruit.crewName) as totalCount from crewRecruit where crewName = '크루1';
-insert into longCrewSchedule values(4,'크루4',5,'ee',true);
-
+insert into crewSchedule values(13,'크루8',2,'aa',true);
+delete from crewSchedule where no = 13;
 
 select crewRecruit.*, (select count(memId) from longCrewSchedule where crewName = crewRecruit.crewName) totalCount from crewRecruit 
 join longCrewSchedule on longCrewSchedule.no = crewRecruit.no where longCrewSchedule.memId = 'java';
@@ -145,11 +143,21 @@ create table longCrewRecruit(
     created varchar(20) not null,
     adminId varchar(30) not null
 );
-select * from longCrewRecruit;
-delete from longCrewRecruit where crewName = '크루5';
-insert into longCrewRecruit values('크루5','내용1',5,'2023-11-30','java');
+
 select *, (select count(memId) from longCrewMember where crewName = longCrewRecruit.crewName) as totalCount 
 from longCrewRecruit order by created desc;
+
+
+select * from longCrewRecruit;
+
+SELECT crewName from longCrewRecruit;
+delete from longCrewRecruit where crewName = '크루5';
+insert into longCrewRecruit values('크루7','내용1',5,'2023-10-30','java');
+select *, (select count(memId) from longCrewMember where crewName = longCrewRecruit.crewName) as totalCount 
+from longCrewRecruit order by created desc;
+update longCrewRecruit set created = '2023-10-01' where crewName = '크루7';
+
+delete from longCrewRecruit where crewName = '크루7' and (select count(*) from longCrewMember where crewName = '크루7') <= 1;
 
 select *, (select count(memId) from longCrewMember where crewName = longCrewRecruit.crewName) 
 as totalCount from longCrewRecruit where crewName = '크루7';
@@ -169,7 +177,7 @@ select * from longCrewMember;
 select *, (select count(memId) from longCrewMember where crewName = longCrewRecruit.crewName) 
 as totalCount from longCrewRecruit where crewName = '크루2';
 
-insert into longCrewMember values('크루2','ee',5,false,'2023-11-30');
+insert into longCrewMember values('크루7','ee',60,false,'2023-11-30');
 
 
 -- 가입정보 ( 장기 단기 크루가입, 일정참여 전부에 사용됨)
@@ -182,3 +190,7 @@ create table crewJoin(
 );
 
 select * from lognCrewRecruit;
+
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = 'project';
