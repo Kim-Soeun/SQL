@@ -73,7 +73,8 @@ create table crewRecruit(
     isCrew boolean default true		-- 단기크루 생성(true)인지, 장기크루 일정(false)인지 확인
 );
 
-
+select * from crewRecruit;
+select adminId from crewRecruit where crewName = "크루1";
 
 
 -- 크루 일정 멤버 등록 & 단기크루 멤버(일정멤버) 등록(단기크루는 그 자체로 일정 fk->no로 바꾸고 pk설정되있는 크루네임 대신에 no)
@@ -89,8 +90,8 @@ create table crewSchedule(
 );
 
 
+select * from crewSchedule where crewName = '크루3(단기)';
 select * from crewSchedule;
-
 
 -- 게시판 댓글
 create table reply(
@@ -116,7 +117,7 @@ create table longCrewRecruit(
 
 
 select * from longCrewRecruit;
-
+select adminId from longCrewRecruit where crewName = '크루5';
 
 
 -- 장기크루 크루가입 정보
@@ -131,6 +132,8 @@ create table longCrewMember(
     FOREIGN KEY (crewName) references longCrewRecruit(crewName) on delete cascade
 );
 select * from longCrewMember;
+select * from longCrewMember where crewName = '크루5';
+
 
 
 
@@ -138,9 +141,14 @@ select * from longCrewMember;
 create table crewJoin(
 	no int primary key auto_increment,
 	crewName varchar(30) not null,
-    memid varchar(30) not null,
-    adminid varchar(30) not null,
-    isCheck boolean default false
+    memId varchar(30) not null,
+    adminId varchar(30) not null,
+    isCheck int not null,	-- 1: 승인대기, 2: 승인완료, 3: 승인거절
+    memberNum int not null,
+    isShortCrew boolean		-- true : 단기크루, false : 장기크루
 );
 
+
+select * from crewJoin where adminId = 'java';
+select * from crewJoin;
 
