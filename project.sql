@@ -90,7 +90,7 @@ create table crewSchedule(
 );
 
 
-select * from crewSchedule where crewName = '크루3(단기)';
+select memId from crewSchedule where crewName = '크루1';
 select * from crewSchedule;
 
 -- 게시판 댓글
@@ -117,10 +117,12 @@ create table longCrewRecruit(
 
 
 select * from longCrewRecruit;
+
 select adminId from longCrewRecruit where crewName = '크루5';
+insert 
 
 
--- 장기크루 크루가입 정보
+ -- 장기크루 크루가입 정보
 create table longCrewMember(
 	crewName varchar(30) not null,
     memId varchar(30) not null,
@@ -132,8 +134,9 @@ create table longCrewMember(
     FOREIGN KEY (crewName) references longCrewRecruit(crewName) on delete cascade
 );
 select * from longCrewMember;
-select * from longCrewMember where crewName = '크루5';
-
+select memId from longCrewMember where crewName = '크루5';
+delete from longCrewMember where memId = 'bb';
+insert into longCrewMember values('크루6','ab',10,0,'2023-12-07');
 
 
 
@@ -149,6 +152,8 @@ create table crewJoin(
 );
 
 
-select * from crewJoin where adminId = 'java';
+select * from crewJoin where isCheck = 1;
+delete from crewJoin where isCheck = 3;
+select * from crewJoin where adminId ='java' and isCheck = 1 and isShortCrew is false;
 select * from crewJoin;
 
