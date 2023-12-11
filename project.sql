@@ -18,6 +18,7 @@ create table member (
     gender varchar(10)
 );
 alter table member add gender varchar(10) not null;
+alter table member modify birthDate varchar(30);
 select * from member;
 select gender from member where id = 'aa';
 update member set gender = '여';
@@ -78,9 +79,11 @@ create table crewRecruit(
     created varchar(20) not null,
     gatherDate varchar(20) not null,
     adminId varchar(30) not null,
-    isCrew boolean default true		-- 단기크루 생성(true)인지, 장기크루 일정(false)인지 확인
+    isCrew boolean default true,		-- 단기크루 생성(true)인지, 장기크루 일정(false)인지 확인
+    courseId varchar(20)
 );
 
+select * from crewRecruit;
 
 -- 크루 일정 멤버 등록 & 단기크루 멤버(일정멤버) 등록(단기크루는 그 자체로 일정 fk->no로 바꾸고 pk설정되있는 크루네임 대신에 no)
 create table crewSchedule(
@@ -94,7 +97,7 @@ create table crewSchedule(
 	foreign key(no) references crewRecruit(no) on delete cascade
 );
 
-
+select * from crewSchedule;
 
 -- 게시판 댓글
 create table reply(
@@ -148,11 +151,19 @@ create table crewJoin(
     isCheck int not null,	-- 1: 승인대기, 2: 승인완료, 3: 승인거절
     memberNum int not null,
     isShortCrew boolean,		-- true : 단기크루, false : 장기크루
-    gender varchar(10)
+    gender varchar(10) not null
 );
-alter table crewJoin add gender varchar(10) not null;
-update crewJoin set gender = '여';
 
+
+create table course(
+	memId varchar(30) not null,
+    courseId varchar(100) not null,
+    no int not null
+    
+);
+
+select no from course where memId = 'java';
+delete from course where courseId = '코스4' and no = 12;
 select * from member;
 select * from crewboard;
 select * from recommend;
@@ -162,5 +173,6 @@ select * from reply;
 select * from longCrewRecruit;
 select * from longCrewMember;
 select * from crewJoin;
+select * from course;
 
-
+insert into course values('java', '코스4', 12);
